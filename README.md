@@ -1,7 +1,5 @@
 # LLM-Reward-Shaping-DQN-IDS
 
-# LLM-Reward-Shaping-DQN-IDS
-
 LLM-Guided Reward Shaping for Deep Reinforcement Learning-Based Network Anomaly Detection.
 
 ## Overview
