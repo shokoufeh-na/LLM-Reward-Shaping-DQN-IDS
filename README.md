@@ -189,3 +189,9 @@ If you use this repository, please cite:
 Shokoufeh Namazian,
 "LLM-Guided Reward Shaping for Deep Reinforcement Learning-Based Network Anomaly Detection,"
 California State University, Fullerton, 2026.
+
+## Supervision
+
+This project is conducted as part of CPSC 599 – Independent Graduate Research at California State University, Fullerton.
+
+**Faculty Supervisor:** Dr. Mikhail Gofman
