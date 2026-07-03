@@ -1,8 +1,6 @@
 # Read CSV files
-
 import pandas as pd
 from pathlib import Path
-
 
 def load_all_csvs(data_dir= "data"):
 
@@ -15,7 +13,7 @@ def load_all_csvs(data_dir= "data"):
 
     for file in files:
 
-        print(f"reading :{file.name}")
+        # print(f"reading :{file.name}")
         df = pd.read_csv(file)
         # print(df.columns)
         df.columns = df.columns.str.strip()
@@ -23,13 +21,12 @@ def load_all_csvs(data_dir= "data"):
         dfs.append(df)
 
     data= pd.concat(dfs, ignore_index=True)
-    return data
+    print("data shape:", data.shape)
 
+    return data
 
 if __name__ == "__main__":
 
     data = load_all_csvs()
-
-    # print(data.shape)
-
+ 
 
