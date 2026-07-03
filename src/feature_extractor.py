@@ -1,5 +1,4 @@
 # Build Network Flow Features & State Vector
-from pyexpat import features
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from data_loader import load_all_csvs

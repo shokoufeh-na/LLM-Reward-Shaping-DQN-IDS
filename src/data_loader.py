@@ -1,8 +1,6 @@
 # Read CSV files
-
 import pandas as pd
 from pathlib import Path
-
 
 def load_all_csvs(data_dir= "data"):
 
