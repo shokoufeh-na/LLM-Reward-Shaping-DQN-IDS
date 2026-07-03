@@ -17,9 +17,9 @@ def load_all_csvs(data_dir= "data"):
 
         print(f"reading :{file.name}")
         df = pd.read_csv(file)
-        print(df.columns)
+        # print(df.columns)
         df.columns = df.columns.str.strip()
-        print(df["Label"].value_counts())
+        # print(df["Label"].value_counts())
         dfs.append(df)
 
     data= pd.concat(dfs, ignore_index=True)
@@ -30,6 +30,6 @@ if __name__ == "__main__":
 
     data = load_all_csvs()
 
-    print(data.shape)
+    # print(data.shape)
 
 
