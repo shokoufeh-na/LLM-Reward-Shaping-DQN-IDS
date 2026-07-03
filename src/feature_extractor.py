@@ -15,12 +15,17 @@ def build_network_flow_features(df):
    labels = df["Label"].copy()
    features = df.drop(columns=["Label"])
 
-     
+   features = features.replace((np.inf, -np.inf),np.nan)
+   features = features.dropna()
 
+   labels= labels.loc[features.index]
+   binary_labels = labels.apply(lambda x: 0 if x == "BENIGN" else 1)
+  
+ 
    scaler = StandardScaler()
    states = scaler.fit_transform(features)
 
-   return scaler ,states
+   return scaler ,states, binary_labels
 
 if __name__ == "__main__":
          
