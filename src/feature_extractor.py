@@ -28,6 +28,7 @@ def build_network_flow_features(df):
 
 if __name__ == "__main__":
     states, labels, scaler = build_network_flow_features(df)
-    # print("States:", states.shape)
-    # print("Labels:", labels.shape)
-    # print("Scaler mean:", scaler.mean_)
+
+    print("States:", states.shape)
+    print("Labels:", labels.shape)
+    print("Scaler mean:", scaler.mean_)
