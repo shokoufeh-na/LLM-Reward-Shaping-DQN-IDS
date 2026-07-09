@@ -4,6 +4,7 @@
 # Randomly sample mini-batches for training.
 # Reduce correlation between consecutive samples.
 # Reuse past experiences, making learning more stable and data-efficient.
+# Off policy
 
 # src/replay_buffer.py
 
