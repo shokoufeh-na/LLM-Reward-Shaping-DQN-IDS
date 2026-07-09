@@ -1,6 +1,26 @@
 # DQN agent
 # src/agent.py
 
+# ε-greedy action selection
+# Replay buffer interaction
+# Bellman target computation
+# Loss computation
+# Optimizer step
+# Target network update
+
+# State
+#   │
+#   ▼
+# agent.py
+#   │
+#   ├── Calls DQN
+#   ├── Chooses action
+#   ├── Stores experience
+#   ├── Samples replay buffer
+#   ├── Computes Bellman target
+#   ├── Updates DQN weights
+#   └── Updates target network
+
 import random
 import torch
 import numpy as np

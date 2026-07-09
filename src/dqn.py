@@ -1,6 +1,10 @@
 # DQN Network
 # src/dqn.py
 
+# Neural network
+
+# Predicts Q-values
+
 import torch
 import torch.nn as nn
 
