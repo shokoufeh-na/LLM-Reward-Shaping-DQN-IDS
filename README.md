@@ -185,7 +185,7 @@ Current Progress
 - [x] Literature Review
 - [x] IEEE Paper Draft
 - [x] Dataset Analysis
-- [ ] RL Environment
+- [x] RL Environment
 - [x] Baseline DQN
 - [ ] LLM Security Critic
 - [ ] PBRS Integration
