@@ -95,8 +95,16 @@ LLM-Reward-Shaping-DQN-IDS/
 │
 ├── models/
 ├── results/
+│   ├── loss.csv
+│   ├── reward.csv
+│   ├── confusion_matrix.png
+│   └── training_curve.png
 ├── paper/
+│   ├── main.tex
+│   ├── references.bib
+│   └── figures/
 ├── notebooks/
+│   └── EDA.ipynb
 ├── requirements.txt
 └── README.md
 ```
@@ -178,7 +186,7 @@ Current Progress
 - [x] IEEE Paper Draft
 - [x] Dataset Analysis
 - [ ] RL Environment
-- [ ] Baseline DQN
+- [x] Baseline DQN
 - [ ] LLM Security Critic
 - [ ] PBRS Integration
 - [ ] Experiments
