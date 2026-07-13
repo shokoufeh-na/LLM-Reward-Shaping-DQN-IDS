@@ -1,136 +1,300 @@
-# RL Environment (Renv)
-# don't include the LLM yet
-# connects the dataset, the DQN, the hidden labels, the LLM, and the reward shaping.
-
 # src/environment.py
 
+from typing import Any, Optional
+
+import gymnasium as gym
 import numpy as np
+from gymnasium import spaces
 
 
-class NetworkEnvironment:
+# Action definitions
+ALLOW = 0
+INSPECT = 1
+
+# Label definitions
+BENIGN = 0
+ATTACK = 1
+
+
+class NetworkEnvironment(gym.Env):
     """
-    Reinforcement Learning Environment for CICIDS2017.
-
-    Action Space
-    ------------
-    0 : Allow
-    1 : Inspect
+    Gymnasium environment for CICIDS2017 network anomaly detection.
 
     State
     -----
-    One normalized network flow.
+    One normalized CICIDS2017 network-flow feature vector.
 
-    Reward
-    ------
-    Renv
+    Actions
+    -------
+    0: Allow
+    1: Inspect
+
+    Environmental Reward
+    --------------------
+    Correct decision: +1.0
+    Incorrect decision: -1.0
+
+    Notes
+    -----
+    The DQN receives only the state vector. The environment keeps the
+    corresponding binary label internally and uses it to calculate R_env.
     """
 
-    def __init__(self, states, labels):
+    metadata = {"render_modes": []}
 
-        self.states = states
-        self.labels = labels
+    def __init__(
+        self,
+        states: np.ndarray,
+        labels: np.ndarray,
+    ) -> None:
+        super().__init__()
 
+        self.states = np.asarray(states, dtype=np.float32)
+        self.labels = np.asarray(labels, dtype=np.int64)
+
+        self._validate_inputs()
+
+        self.num_samples = len(self.states)
+        self.state_dim = self.states.shape[1]
         self.current_index = 0
 
-        self.num_samples = len(states)
+        # Two discrete actions:
+        # 0 = Allow
+        # 1 = Inspect
+        self.action_space = spaces.Discrete(2)
 
-    def reset(self):
+        # State vectors are Z-score standardized, so values are not
+        # necessarily restricted to [0, 1].
+        self.observation_space = spaces.Box(
+            low=-np.inf,
+            high=np.inf,
+            shape=(self.state_dim,),
+            dtype=np.float32,
+        )
+
+    def _validate_inputs(self) -> None:
+        """Validate states and labels before training begins."""
+
+        if self.states.ndim != 2:
+            raise ValueError(
+                "states must be a two-dimensional array with shape "
+                "(number_of_samples, number_of_features)."
+            )
+
+        if self.labels.ndim != 1:
+            raise ValueError(
+                "labels must be a one-dimensional array."
+            )
+
+        if len(self.states) == 0:
+            raise ValueError("states cannot be empty.")
+
+        if len(self.states) != len(self.labels):
+            raise ValueError(
+                "states and labels must contain the same number of samples."
+            )
+
+        valid_labels = {BENIGN, ATTACK}
+        observed_labels = set(np.unique(self.labels).tolist())
+
+        if not observed_labels.issubset(valid_labels):
+            raise ValueError(
+                "labels must be binary: 0 for BENIGN and 1 for ATTACK. "
+                f"Observed labels: {observed_labels}"
+            )
+
+        if not np.isfinite(self.states).all():
+            raise ValueError(
+                "states contain NaN or infinite values. "
+                "Clean the features before creating the environment."
+            )
+
+    def reset(
+        self,
+        *,
+        seed: Optional[int] = None,
+        options: Optional[dict[str, Any]] = None,
+    ) -> tuple[np.ndarray, dict[str, Any]]:
         """
-        Reset the environment.
-        """
-
-        self.current_index = 0
-
-        return self.states[self.current_index]
-# Current State
-
-# ↓
-
-# Hidden Label
-
-# ↓
-
-# Compute Renv
-
-# ↓
-
-# Move to Next State
-
-# ↓
-
-# Return
-
-    def step(self, action):
-        """
-        Execute one action.
+        Reset the environment to the first network flow.
 
         Returns
         -------
-        next_state
-        reward
-        done
-        info
+        observation:
+            First state vector.
+
+        info:
+            Additional environment information.
         """
 
-        true_label = self.labels[self.current_index]
+        super().reset(seed=seed)
 
-        reward = self.compute_reward(
-            action,
-            true_label
-        )
+        self.current_index = 0
 
-        self.current_index += 1
-
-        done = self.current_index >= self.num_samples
-
-        if done:
-
-            next_state = np.zeros_like(
-                self.states[0]
-            )
-
-        else:
-
-            next_state = self.states[
-                self.current_index
-            ]
+        observation = self.states[self.current_index].copy()
 
         info = {
-            "label": true_label
+            "sample_index": self.current_index,
+        }
+
+        return observation, info
+
+    def step(
+        self,
+        action: int,
+    ) -> tuple[
+        np.ndarray,
+        float,
+        bool,
+        bool,
+        dict[str, Any],
+    ]:
+        """
+        Execute the selected action for the current network flow.
+
+        Parameters
+        ----------
+        action:
+            0 for Allow or 1 for Inspect.
+
+        Returns
+        -------
+        next_state:
+            The next normalized network-flow state.
+
+        reward:
+            Environmental reward R_env.
+
+        terminated:
+            True when all samples have been processed.
+
+        truncated:
+            Always False because this environment currently has no
+            external time limit.
+
+        info:
+            Diagnostic information. The agent should not use
+            true_label for action selection during training.
+        """
+
+        if not self.action_space.contains(action):
+            raise ValueError(
+                f"Invalid action {action}. "
+                f"Expected {ALLOW} (Allow) or {INSPECT} (Inspect)."
+            )
+
+        if self.current_index >= self.num_samples:
+            raise RuntimeError(
+                "The episode has already terminated. Call reset() "
+                "before calling step() again."
+            )
+
+        true_label = int(self.labels[self.current_index])
+
+        reward = self.compute_environment_reward(
+            action=action,
+            true_label=true_label,
+        )
+
+        current_sample_index = self.current_index
+        self.current_index += 1
+
+        terminated = self.current_index >= self.num_samples
+        truncated = False
+
+        if terminated:
+            # Gymnasium still requires an observation when the episode ends.
+            next_state = np.zeros(
+                self.state_dim,
+                dtype=np.float32,
+            )
+        else:
+            next_state = self.states[self.current_index].copy()
+
+        info = {
+            "sample_index": current_sample_index,
+            "true_label": true_label,
+            "action_correct": reward > 0,
+            "environment_reward": reward,
         }
 
         return (
             next_state,
             reward,
-            done,
-            info
+            terminated,
+            truncated,
+            info,
         )
 
-    def compute_reward(
-            self,
-            action,
-            label):
+    @staticmethod
+    def compute_environment_reward(
+        action: int,
+        true_label: int,
+    ) -> float:
         """
-        Environmental reward.
+        Calculate the original environmental reward R_env.
 
-        label
-        -----
-        0 = BENIGN
-        1 = ATTACK
+        Reward table
+        ------------
+        BENIGN + Allow   = +1
+        BENIGN + Inspect = -1
+        ATTACK + Inspect = +1
+        ATTACK + Allow   = -1
         """
 
-        if label == 0:
+        correct_action = (
+            (true_label == BENIGN and action == ALLOW)
+            or
+            (true_label == ATTACK and action == INSPECT)
+        )
 
-            if action == 0:
-                return 1.0
+        return 1.0 if correct_action else -1.0
 
-            else:
-                return -1.0
 
-        else:
+if __name__ == "__main__":
+    # Small test using fake normalized state vectors.
+    sample_states = np.array(
+        [
+            [0.20, -0.50, 1.10],
+            [-0.80, 1.30, 0.40],
+            [1.20, 0.10, -0.60],
+        ],
+        dtype=np.float32,
+    )
 
-            if action == 1:
-                return 1.0
+    # 0 = BENIGN, 1 = ATTACK
+    sample_labels = np.array([0, 1, 0], dtype=np.int64)
 
-            else:
-                return -1.0
+    env = NetworkEnvironment(
+        states=sample_states,
+        labels=sample_labels,
+    )
+
+    state, info = env.reset()
+
+    print("Initial state:", state)
+    print("Reset info:", info)
+
+    terminated = False
+
+    while not terminated:
+        action = env.action_space.sample()
+
+        (
+            next_state,
+            reward,
+            terminated,
+            truncated,
+            info,
+        ) = env.step(action)
+
+        action_name = "Allow" if action == ALLOW else "Inspect"
+
+        print(
+            f"Action={action_name}, "
+            f"Reward={reward}, "
+            f"Terminated={terminated}, "
+            f"Info={info}"
+        )
+
+        state = next_state
