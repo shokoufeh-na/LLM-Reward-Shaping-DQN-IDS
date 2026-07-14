@@ -94,12 +94,13 @@ class DQNAgent:
         self.update_target_network()
         self.target_network.eval()
 
-        self.optimizer = optim.Adam(
-            self.policy_network.parameters(),
-            lr=learning_rate,
-        )
+        self.optimizer = optim.AdamW(
+        self.policy_network.parameters(),
+        lr=learning_rate,
+        amsgrad=True,
+)
 
-        self.loss_fn = nn.MSELoss()
+        self.loss_fn = nn.SmoothL1Loss()
 
         self.replay_buffer = ReplayBuffer(
             capacity=buffer_size

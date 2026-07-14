@@ -107,7 +107,7 @@ def train(
     use_llm: bool = False,
     max_steps_per_epoch: Optional[int] = None,
     target_update_interval: int = 1000,
-    learning_rate: float = 1e-3,
+    learning_rate: float = 3e-4,
     gamma: float = 0.99,
     batch_size: int = 64,
     buffer_size: int = 100_000,
@@ -182,6 +182,7 @@ def train(
 
     # Seed the Gymnasium action space.
     environment.action_space.seed(seed)
+    environment.observation_space.seed(seed)
 
     state_dim = environment.observation_space.shape[0]
     action_dim = environment.action_space.n
