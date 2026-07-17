@@ -543,4 +543,3 @@ if __name__ == "__main__":
         results_dir=arguments.results_dir,
         batch_size=arguments.batch_size,
     )
-```
