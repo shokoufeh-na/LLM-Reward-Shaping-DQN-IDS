@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from data_loader import load_all_csvs
 
 
+
 def clean_features_and_labels(
     df: pd.DataFrame,
 ):
@@ -92,7 +93,7 @@ def build_training_states(
         df
     )
 
-    # Create and fit scaler using TRAINING data only
+    # Create and fit scaler using TRAINING data only, Z-score normalization
     scaler = StandardScaler()
 
     states = scaler.fit_transform(
