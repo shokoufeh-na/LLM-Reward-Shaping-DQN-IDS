@@ -11,7 +11,10 @@ import torch
 from agent import DQNAgent
 from data_loader import load_all_csvs
 from environment import NetworkEnvironment
-from feature_extractor import extract_states_and_labels
+from feature_extractor import (
+    build_training_states,
+    build_evaluation_states,
+)
 from llm_critic import LLMCritic
 from reward_shaping import PotentialBasedRewardShaper
 
@@ -86,7 +89,6 @@ def evaluate_potential(
     critic: LLMCritic,
     normalized_state: np.ndarray,
     scaler,
-    feature_names: list[str],
 ) -> float:
     """
     Convert a normalized state to named features and ask
@@ -96,7 +98,7 @@ def evaluate_potential(
     named_state = state_to_feature_dictionary(
         normalized_state=normalized_state,
         scaler=scaler,
-        feature_names=feature_names,
+        feature_names = scaler.feature_names_in_,
     )
 
     return critic.evaluate(named_state)
@@ -142,42 +144,52 @@ def train(
     # Seed Python, NumPy, and PyTorch before creating
     # the environment, agent, and neural networks.
     set_random_seed(seed)
+    
+    print("Loading training data...")
 
-    print("Loading CICIDS2017 CSV files...")
-
-    dataframe = load_all_csvs()
-    dataframe.columns = dataframe.columns.str.strip()
-
-    feature_names = [
-        column
-        for column in dataframe.columns
-        if column != "Label"
-    ]
-
-    print("Preparing normalized state vectors...")
-
-    states, labels, scaler = extract_states_and_labels(
-        dataframe
+    train_dataframe = load_all_csvs(
+        "data/train"
     )
 
-    states = np.asarray(
-        states,
+    print("Preparing standardized training states...")
+
+    train_states, train_labels, scaler = (
+        build_training_states(
+            train_dataframe
+        )
+    )
+
+    train_states = np.asarray(
+        train_states,
         dtype=np.float32,
     )
 
-    labels = np.asarray(
-        labels,
+    train_labels = np.asarray(
+        train_labels,
         dtype=np.int64,
     )
 
-    print(f"Number of states: {len(states):,}")
-    print(f"State dimension: {states.shape[1]}")
-    print(f"Benign samples: {(labels == 0).sum():,}")
-    print(f"Attack samples: {(labels == 1).sum():,}")
+    print(f"Training states: {train_states.shape}")
+    print(f"Training labels: {train_labels.shape}")
+
+    # states = np.asarray(
+    #     states,
+    #     dtype=np.float32,
+    # )
+
+    # labels = np.asarray(
+    #     labels,
+    #     dtype=np.int64,
+    # )
+
+    # print(f"Number of states: {len(states):,}")
+    # print(f"State dimension: {states.shape[1]}")
+    # print(f"Benign samples: {(labels == 0).sum():,}")
+    # print(f"Attack samples: {(labels == 1).sum():,}")
 
     environment = NetworkEnvironment(
-        states=states,
-        labels=labels,
+        states=train_states,
+        labels=train_labels,
     )
 
     # Seed the Gymnasium action space.
@@ -250,7 +262,6 @@ def train(
                 critic=llm_critic,
                 normalized_state=state,
                 scaler=scaler,
-                feature_names=feature_names,
             )
 
         while not terminated and not truncated:
@@ -281,11 +292,10 @@ def train(
                     phi_next = 0.0
                 else:
                     phi_next = evaluate_potential(
-                        critic=llm_critic,
-                        normalized_state=next_state,
-                        scaler=scaler,
-                        feature_names=feature_names,
-                    )
+                    critic=llm_critic,
+                    normalized_state=state,
+                    scaler=scaler,
+)
 
                 reward_result = reward_shaper.calculate(
                     environment_reward=environment_reward,
@@ -367,7 +377,7 @@ def train(
             f"\n  Total reward sum: "
             f"{epoch_total_reward:.4f}"
             f"\n  Average loss: {average_loss:.6f}"
-            f"\n  Epsilon: {agent.epsilon:.6f}"
+            f"\n  Epsilon: {agent.current_epsilon:.6f}"
             f"\n  Replay-buffer size: "
             f"{len(agent.replay_buffer):,}\n"
         )
