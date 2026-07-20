@@ -1,10 +1,42 @@
+# src/prompt_generator.py
+
+
 class PromptGenerator:
     """
-    Generates prompts for the LLM Security Critic.
+    Generates prompts for the LLM Security Critic
+    using selected CICIDS2017 network-flow features.
     """
 
     def __init__(self):
-        pass
+
+        self.selected_features = [
+            "Destination Port",
+            "Flow Duration",
+            "Total Fwd Packets",
+            "Total Backward Packets",
+            "Total Length of Fwd Packets",
+            "Total Length of Bwd Packets",
+            "Fwd Packet Length Max",
+            "Fwd Packet Length Mean",
+            "Bwd Packet Length Max",
+            "Bwd Packet Length Mean",
+            "Flow Bytes/s",
+            "Flow Packets/s",
+            "Flow IAT Mean",
+            "Flow IAT Std",
+            "Flow IAT Max",
+            "Flow IAT Min",
+            "Fwd IAT Mean",
+            "Bwd IAT Mean",
+            "SYN Flag Count",
+            "ACK Flag Count",
+            "RST Flag Count",
+            "PSH Flag Count",
+            "FIN Flag Count",
+            "Average Packet Size",
+            "Active Mean",
+            "Idle Mean",
+        ]
 
     def generate(self, state):
         """
@@ -13,64 +45,92 @@ class PromptGenerator:
         Parameters
         ----------
         state : dict
-            Dictionary containing one network flow.
+            Dictionary containing one network flow
+            with original-scale feature values.
 
         Returns
         -------
         prompt : str
         """
 
+        feature_lines = []
+
+        for feature in self.selected_features:
+
+            if feature in state:
+
+                value = state[feature]
+
+                feature_lines.append(
+                    f"{feature}: {value}"
+                )
+
+        feature_text = "\n".join(feature_lines)
+
         prompt = f"""
-            You are an expert cybersecurity analyst.
+You are an expert cybersecurity analyst specializing in
+network intrusion detection.
 
-            Analyze the following network flow.
+Analyze the following network flow based on its traffic
+statistics.
 
-            Flow Duration: {state['Flow Duration']}
-            Destination Port: {state['Destination Port']}
-            Total Forward Packets: {state['Total Fwd Packets']}
-            Total Backward Packets: {state['Total Bwd Packets']}
-            Total Length of Forward Packets: {state['Total Length of Fwd Packets']}
-            Total Length of Backward Packets: {state['Total Length of Bwd Packets']}
-            Flow Bytes/s: {state['Flow Bytes/s']}
-            Flow Packets/s: {state['Flow Packets/s']}
-            SYN Flag Count: {state['SYN Flag Count']}
-            ACK Flag Count: {state['ACK Flag Count']}
-            Average Packet Size: {state['Average Packet Size']}
+Network Flow Features:
 
-            Estimate how suspicious this traffic flow is.
+{feature_text}
 
-            Return ONLY one floating-point number between 0.0 and 1.0.
+Estimate the security risk of this network flow based only
+on the provided network traffic features.
 
-            Examples:
+Return ONLY one floating-point number between 0.0 and 1.0.
 
-            0.0 = Definitely Benign
+The score represents:
 
-            0.5 = Suspicious
+0.0 = Strongly consistent with benign network traffic
+0.5 = Uncertain or moderately suspicious network traffic
+1.0 = Strongly consistent with malicious network traffic
 
-            1.0 = Definitely Malicious
-            """
+Do not return explanations, labels, or additional text.
+Return only the numerical score.
+"""
 
-        return prompt
+        return prompt.strip()
 
 
 if __name__ == "__main__":
 
     sample_state = {
-        "Flow Duration": 125000,
         "Destination Port": 80,
+        "Flow Duration": 125000,
         "Total Fwd Packets": 10,
-        "Total Bwd Packets" : 4,
+        "Total Backward Packets": 4,
         "Total Length of Fwd Packets": 2000,
         "Total Length of Bwd Packets": 500,
+        "Fwd Packet Length Max": 500,
+        "Fwd Packet Length Mean": 200,
+        "Bwd Packet Length Max": 250,
+        "Bwd Packet Length Mean": 125,
         "Flow Bytes/s": 180000,
         "Flow Packets/s": 32,
+        "Flow IAT Mean": 4000,
+        "Flow IAT Std": 1200,
+        "Flow IAT Max": 10000,
+        "Flow IAT Min": 20,
+        "Fwd IAT Mean": 5000,
+        "Bwd IAT Mean": 6000,
         "SYN Flag Count": 2,
         "ACK Flag Count": 8,
-        "Average Packet Size": 300
+        "RST Flag Count": 0,
+        "PSH Flag Count": 2,
+        "FIN Flag Count": 1,
+        "Average Packet Size": 300,
+        "Active Mean": 15000,
+        "Idle Mean": 2000,
     }
 
     generator = PromptGenerator()
 
-    prompt = generator.generate(sample_state)
+    prompt = generator.generate(
+        sample_state
+    )
 
     print(prompt)

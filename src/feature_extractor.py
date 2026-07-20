@@ -208,12 +208,4 @@ if __name__ == "__main__":
     )
 
     print("\nValidation Data")
-    print("----------------")
-    print(
-        "States:",
-        validation_states.shape
-    )
-    print(
-        "Labels:",
-        validation_labels.shape
-    )
+   
