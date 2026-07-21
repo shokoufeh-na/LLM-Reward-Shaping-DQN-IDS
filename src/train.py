@@ -7,6 +7,8 @@ from typing import Optional
 
 import numpy as np
 import torch
+import joblib
+from pathlib import Path
 
 from agent import DQNAgent
 from data_loader import load_all_csvs
@@ -158,6 +160,14 @@ def train(
             train_dataframe
         )
     )
+   
+    MODELS_DIR = Path("models")
+    MODELS_DIR.mkdir(exist_ok=True)
+
+    joblib.dump(
+        scaler,
+        MODELS_DIR / "standard_scaler.joblib"
+    )
 
     train_states = np.asarray(
         train_states,
@@ -171,21 +181,6 @@ def train(
 
     print(f"Training states: {train_states.shape}")
     print(f"Training labels: {train_labels.shape}")
-
-    # states = np.asarray(
-    #     states,
-    #     dtype=np.float32,
-    # )
-
-    # labels = np.asarray(
-    #     labels,
-    #     dtype=np.int64,
-    # )
-
-    # print(f"Number of states: {len(states):,}")
-    # print(f"State dimension: {states.shape[1]}")
-    # print(f"Benign samples: {(labels == 0).sum():,}")
-    # print(f"Attack samples: {(labels == 1).sum():,}")
 
     environment = NetworkEnvironment(
         states=train_states,
