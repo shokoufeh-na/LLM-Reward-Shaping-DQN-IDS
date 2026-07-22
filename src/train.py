@@ -179,8 +179,44 @@ def train(
         dtype=np.int64,
     )
 
+    rng = np.random.default_rng(seed)
+
+    benign_indices = np.where(train_labels == 0)[0]
+    attack_indices = np.where(train_labels == 1)[0]
+
+    samples_per_class = min(
+        len(benign_indices),
+        len(attack_indices),
+    )
+
+    selected_benign = rng.choice(
+        benign_indices,
+        size=samples_per_class,
+        replace=False,
+    )
+
+    selected_attack = rng.choice(
+        attack_indices,
+        size=samples_per_class,
+        replace=False,
+    )
+
+    selected_indices = np.concatenate(
+        [selected_benign, selected_attack]
+    )
+    # shuffle before creating the environment
+    rng.shuffle(selected_indices)
+
+    train_states = train_states[selected_indices]
+    train_labels = train_labels[selected_indices]
+
+    print("\nBalanced training subset")
+    print(f"Benign: {np.sum(train_labels == 0):,}")
+    print(f"Attack: {np.sum(train_labels == 1):,}")
+
     print(f"Training states: {train_states.shape}")
     print(f"Training labels: {train_labels.shape}")
+
 
     environment = NetworkEnvironment(
         states=train_states,
