@@ -545,33 +545,84 @@ def train(
         "\nLoading complete CICIDS2017 dataset..."
     )
 
-    full_dataframe = load_all_csvs(
-        "data"
-    )
+    # full_dataframe = load_all_csvs(
+    #     "data"
+    # )
 
-    # --------------------------------------------------------
-    # Random 60 / 20 / 20 split
-    # --------------------------------------------------------
+    # # --------------------------------------------------------
+    # # Random 60 / 20 / 20 split
+    # # --------------------------------------------------------
 
-    (
-        train_dataframe,
-        validation_dataframe,
-        test_dataframe,
-    ) = create_random_data_split(
-        full_dataframe,
-        seed=seed,
-    )
+    # (
+    #     train_dataframe,
+    #     validation_dataframe,
+    #     test_dataframe,
+    # ) = create_random_data_split(
+    #     full_dataframe,
+    #     seed=seed,
+    # )
 
-    # --------------------------------------------------------
-    # Save exactly this split
-    # --------------------------------------------------------
+    # # --------------------------------------------------------
+    # # Save exactly this split
+    # # --------------------------------------------------------
 
-    save_data_split(
-        train_dataframe=train_dataframe,
-        validation_dataframe=validation_dataframe,
-        test_dataframe=test_dataframe,
-    )
+    # save_data_split(
+    #     train_dataframe=train_dataframe,
+    #     validation_dataframe=validation_dataframe,
+    #     test_dataframe=test_dataframe,
+    # )
+    train_file = TRAIN_SPLIT_DIR / "train.csv"
+    validation_file = VALIDATION_SPLIT_DIR / "validation.csv"
+    test_file = TEST_SPLIT_DIR / "test.csv"
 
+
+    # Check whether the split already exists
+    if (
+        train_file.exists()
+        and validation_file.exists()
+        and test_file.exists()
+    ):
+        print("\nExisting data split found.")
+        print("Using the SAME train/validation/test split.")
+
+        train_dataframe = pd.read_csv(
+            train_file
+        )
+
+        validation_dataframe = pd.read_csv(
+            validation_file
+        )
+
+        test_dataframe = pd.read_csv(
+            test_file
+        )
+
+    else:
+        print("\nNo existing data split found.")
+        print("Creating 60/20/20 split...")
+
+        # Load all original CICIDS2017 files
+        full_dataframe = load_all_csvs(
+            "data"
+        )
+
+        (
+            train_dataframe,
+            validation_dataframe,
+            test_dataframe,
+        ) = create_random_data_split(
+            full_dataframe,
+            seed=seed,
+        )
+
+        # Save split ONCE
+        save_data_split(
+            train_dataframe=train_dataframe,
+            validation_dataframe=validation_dataframe,
+            test_dataframe=test_dataframe,
+        )
+
+ 
     # We no longer need the full combined dataframe.
     del full_dataframe
 
