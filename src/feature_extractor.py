@@ -4,18 +4,19 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-from data_loader import load_all_csvs
-
-
 
 def clean_features_and_labels(
     df: pd.DataFrame,
 ):
     """
-    Separate network-flow features and labels,
-    remove invalid rows, and convert labels to binary.
+    Clean CICIDS2017 data.
 
-    Labels:
+    Returns:
+        features
+        binary_labels
+        original_labels
+
+    Binary labels:
         0 = BENIGN
         1 = ATTACK
     """
@@ -30,48 +31,55 @@ def clean_features_and_labels(
             "'Label' column was not found in the dataframe."
         )
 
-    # Separate labels from network-flow features
-    labels = df["Label"].copy()
+    # Keep original attack labels
+    original_labels = (
+        df["Label"]
+        .astype(str)
+        .str.strip()
+    )
 
+    # Separate network-flow features
     features = df.drop(
         columns=["Label"]
     )
 
-    # Convert feature columns to numeric values
+    # Convert feature columns to numeric
     features = features.apply(
         pd.to_numeric,
-        errors="coerce"
+        errors="coerce",
     )
 
     # Replace infinity with NaN
     features = features.replace(
         [np.inf, -np.inf],
-        np.nan
+        np.nan,
     )
 
-    # Remove rows containing missing/invalid feature values
-    features = features.dropna()
+    # Find valid rows
+    valid_mask = ~features.isna().any(axis=1)
 
-    # Keep labels corresponding only to valid feature rows
-    labels = labels.loc[
-        features.index
-    ]
+    # Keep only valid rows
+    features = features.loc[
+        valid_mask
+    ].copy()
 
-    # Convert CICIDS2017 labels to binary labels:
-    # BENIGN = 0
-    # All attacks = 1
-    binary_labels = labels.apply(
-        lambda label:
-        0
-        if str(label).strip().upper() == "BENIGN"
-        else 1
+    original_labels = original_labels.loc[
+        valid_mask
+    ].copy()
+
+    # Binary labels
+    binary_labels = (
+        original_labels
+        .str.upper()
+        .ne("BENIGN")
+        .astype(np.int64)
+        .to_numpy()
     )
 
     return (
         features,
-        binary_labels.to_numpy(
-            dtype=np.int64
-        ),
+        binary_labels,
+        original_labels.to_numpy(),
     )
 
 
@@ -81,19 +89,21 @@ def build_training_states(
     """
     Build state vectors for TRAINING data.
 
-    The StandardScaler is fitted ONLY on training data.
+    StandardScaler is fitted only on training data.
 
     Returns:
         states
-        labels
+        binary_labels
+        original_labels
         scaler
     """
 
-    features, labels = clean_features_and_labels(
-        df
-    )
+    (
+        features,
+        binary_labels,
+        original_labels,
+    ) = clean_features_and_labels(df)
 
-    # Create and fit scaler using TRAINING data only, Z-score normalization
     scaler = StandardScaler()
 
     states = scaler.fit_transform(
@@ -102,7 +112,8 @@ def build_training_states(
 
     return (
         states.astype(np.float32),
-        labels,
+        binary_labels,
+        original_labels,
         scaler,
     )
 
@@ -114,20 +125,19 @@ def build_evaluation_states(
     """
     Build state vectors for VALIDATION or TEST data.
 
-    Important:
     The scaler is NOT fitted again.
-
-    It uses the scaler previously fitted on training data.
     """
 
-    features, labels = clean_features_and_labels(
-        df
-    )
+    (
+        features,
+        binary_labels,
+        original_labels,
+    ) = clean_features_and_labels(df)
 
-    # Make sure feature order matches training data
+    # Make sure feature order matches training
     if hasattr(
         scaler,
-        "feature_names_in_"
+        "feature_names_in_",
     ):
         expected_features = list(
             scaler.feature_names_in_
@@ -149,63 +159,12 @@ def build_evaluation_states(
             expected_features
         ]
 
-    # IMPORTANT:
-    # transform(), NOT fit_transform()
     states = scaler.transform(
         features
     )
 
     return (
         states.astype(np.float32),
-        labels,
+        binary_labels,
+        original_labels,
     )
-
-
-if __name__ == "__main__":
-
-    # ---------------------------------
-    # TRAINING DATA
-    # ---------------------------------
-
-    train_df = load_all_csvs(
-        "data/train"
-    )
-
-    train_states, train_labels, scaler = (
-        build_training_states(
-            train_df
-        )
-    )
-
-    print("\nTraining Data")
-    print("----------------")
-    print(
-        "States:",
-        train_states.shape
-    )
-    print(
-        "Labels:",
-        train_labels.shape
-    )
-    print(
-        "Scaler mean:",
-        scaler.mean_
-    )
-
-    # ---------------------------------
-    # VALIDATION DATA
-    # ---------------------------------
-
-    validation_df = load_all_csvs(
-        "data/validation"
-    )
-
-    validation_states, validation_labels = (
-        build_evaluation_states(
-            validation_df,
-            scaler
-        )
-    )
-
-    print("\nValidation Data")
-   
