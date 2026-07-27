@@ -624,7 +624,7 @@ def train(
 
  
     # We no longer need the full combined dataframe.
-    del full_dataframe
+    # del full_dataframe
 
     # --------------------------------------------------------
     # Prepare TRAINING states

@@ -28,7 +28,7 @@ Analyze the following network traffic.
 Flow Duration: {state['Flow Duration']}
 Destination Port: {state['Destination Port']}
 Total Forward Packets: {state['Total Fwd Packets']}
-Total Backward Packets: {state['Total Bwd Packets']}
+Total Backward Packets: {state['Total Backward Packets']}
 Flow Bytes/s: {state['Flow Bytes/s']}
 Flow Packets/s: {state['Flow Packets/s']}
 Average Packet Size: {state['Average Packet Size']}
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         "Flow Duration": 125000,
         "Destination Port": 80,
         "Total Fwd Packets": 10,
-        "Total Bwd Packets": 4,
+        "Total Backward Packets": 4,
         "Flow Bytes/s": 180000,
         "Flow Packets/s": 32,
         "Average Packet Size": 300,
