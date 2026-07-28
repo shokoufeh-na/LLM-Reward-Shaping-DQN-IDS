@@ -187,8 +187,8 @@ Current Progress
 - [x] Dataset Analysis
 - [x] RL Environment
 - [x] Baseline DQN
-- [ ] LLM Security Critic
-- [ ] PBRS Integration
+- [x] LLM Security Critic
+- [x] PBRS Integration
 - [ ] Experiments
 - [ ] Paper Submission
 
