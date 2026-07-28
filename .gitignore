@@ -1,9 +1,9 @@
 .DS_Store
 data/
+models/
+result/
 __pycache__/
 *.pyc
 ./vscode
-models/
-result/
 data_split
 .venv
