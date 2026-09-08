@@ -189,7 +189,7 @@ Current Progress
 - [x] Baseline DQN
 - [x] LLM Security Critic
 - [x] PBRS Integration
-- [x ] Experiments
+- [x] Experiments
 - [ ] Paper Submission
 
 ---
