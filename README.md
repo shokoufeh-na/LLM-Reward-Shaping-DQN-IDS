@@ -198,7 +198,7 @@ Current Progress
 
 If you use this repository, please cite:
 
-Shokoufeh Namazian,
+S. Namazian,
 "LLM-Guided Reward Shaping for Deep Reinforcement Learning-Based Network Anomaly Detection,"
 California State University, Fullerton, 2026.
 
